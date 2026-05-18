@@ -31,14 +31,14 @@ void writeRecord(FILE *fPtr, unsigned int accountNum, const struct clientData *c
 
 int main(int argc, char *argv[])
 {
-    FILE *cfPtr;         // credit.dat file pointer
+    FILE *cfPtr;         // clients.dat file pointer
     unsigned int choice; // user's choice
 
     // fopen opens the file; exits if file cannot be opened
-    if ((cfPtr = fopen("credit.dat", "rb+")) == NULL)
+    if ((cfPtr = fopen("clients.dat", "rb+")) == NULL)
     {
         // Try creating it since it might not exist
-        if ((cfPtr = fopen("credit.dat", "wb+")) == NULL)
+        if ((cfPtr = fopen("clients.dat", "wb+")) == NULL)
         {
             printf("%s: File could not be opened.\n", argv[0]);
             exit(EXIT_FAILURE);
