@@ -26,10 +26,13 @@ void deleteRecord(struct clientData clients[]);
 void listRecords(const struct clientData clients[]);
 void searchRecordByName(const struct clientData clients[]);
 void showTotalBalance(const struct clientData clients[]);
+void displaySortedByBalance(const struct clientData clients[]);
+void exportToCSV(const struct clientData clients[]);
 void saveAndExit(const struct clientData clients[], const char *filename);
 
 // Helper function prototypes for functional decomposition
 unsigned int getValidAccountNum(const char *prompt);
+int compareBalance(const void *a, const void *b);
 
 int main(int argc, char *argv[])
 {
@@ -48,7 +51,7 @@ int main(int argc, char *argv[])
     // and it will be created on exit.
 
     // enable user to specify action
-    while ((choice = enterChoice()) != 8)
+    while ((choice = enterChoice()) != 10)
     {
         switch (choice)
         {
@@ -72,6 +75,12 @@ int main(int argc, char *argv[])
             break;
         case 7:
             showTotalBalance(clients);
+            break;
+        case 8:
+            displaySortedByBalance(clients);
+            break;
+        case 9:
+            exportToCSV(clients);
             break;
         default:
             puts("Incorrect choice");
@@ -112,6 +121,74 @@ void textFile(const struct clientData clients[])
     }                     
 } // end function textFile
 
+// export to CSV format for external processing
+void exportToCSV(const struct clientData clients[])
+{
+    FILE *writePtr;
+    int i;
+
+    if ((writePtr = fopen("accounts.csv", "w")) == NULL)
+    {
+        puts("File could not be opened.");
+    }
+    else
+    {
+        fprintf(writePtr, "Account,LastName,FirstName,Balance\n");
+        for (i = 0; i < MAX_RECORDS; i++)
+        {
+            if (clients[i].acctNum != 0)
+            {
+                fprintf(writePtr, "%u,%s,%s,%.2f\n", clients[i].acctNum, clients[i].lastName, clients[i].firstName, clients[i].balance);
+            }
+        }
+        fclose(writePtr);
+        puts("Successfully exported accounts to accounts.csv.");
+    }
+}
+
+// compare function for sorting accounts by balance (descending)
+int compareBalance(const void *a, const void *b)
+{
+    const struct clientData *clientA = (const struct clientData *)a;
+    const struct clientData *clientB = (const struct clientData *)b;
+    
+    // Sort descending (highest balance first)
+    // Need to push empty accounts (acctNum == 0) to the bottom
+    if (clientA->acctNum == 0 && clientB->acctNum == 0) return 0;
+    if (clientA->acctNum == 0) return 1;
+    if (clientB->acctNum == 0) return -1;
+
+    if (clientB->balance > clientA->balance) return 1;
+    if (clientB->balance < clientA->balance) return -1;
+    return 0;
+}
+
+// display all active accounts sorted by highest balance
+void displaySortedByBalance(const struct clientData clients[])
+{
+    struct clientData sortedClients[MAX_RECORDS];
+    int i;
+    
+    // Copy active clients to temporary array so we don't mess up the index mapping
+    memcpy(sortedClients, clients, sizeof(struct clientData) * MAX_RECORDS);
+    
+    // Sort the copy using qsort
+    qsort(sortedClients, MAX_RECORDS, sizeof(struct clientData), compareBalance);
+    
+    printf("\n--- Accounts Sorted by Balance (Highest to Lowest) ---\n");
+    printf("%-6s%-16s%-11s%10s\n", "Acct", "Last Name", "First Name", "Balance");
+    printf("---------------------------------------------\n");
+
+    for (i = 0; i < MAX_RECORDS; i++)
+    {
+        if (sortedClients[i].acctNum != 0)
+        {
+            printf("%-6u%-16s%-11s%10.2f\n", sortedClients[i].acctNum, sortedClients[i].lastName, sortedClients[i].firstName, sortedClients[i].balance);
+        }
+    }
+    printf("---------------------------------------------\n\n");
+}
+
 // update balance in record
 void updateRecord(struct clientData clients[])
 {
@@ -151,9 +228,10 @@ void updateRecord(struct clientData clients[])
 // delete an existing record
 void deleteRecord(struct clientData clients[])
 {
-    unsigned int accountNum = getValidAccountNum("Enter account number to delete ( 1 - 100 ): ");
+    unsigned int accountNum;
     int index;
 
+    accountNum = getValidAccountNum("Enter account number to delete ( 1 - 100 ): ");
     if (accountNum == 0) return;
 
     index = accountNum - 1;
@@ -301,7 +379,9 @@ unsigned int enterChoice(void)
                  "5 - list all accounts\n"
                  "6 - search account by last name\n"
                  "7 - show total bank balance\n"
-                 "8 - end program\n? ");
+                 "8 - display accounts sorted by balance\n"
+                 "9 - export accounts to CSV\n"
+                 "10 - end program\n? ");
 
     if (scanf("%u", &menuChoice) != 1) {
         // clear input buffer if invalid entry is made
