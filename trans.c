@@ -32,6 +32,7 @@ void transferFunds(struct clientData clients[]);
 void countActiveAccounts(const struct clientData clients[]);
 void applyInterest(struct clientData clients[]);
 void findOverdrawnAccounts(const struct clientData clients[]);
+void factoryReset(struct clientData clients[]);
 void saveAndExit(const struct clientData clients[], const char *filename);
 
 // Helper function prototypes for functional decomposition
@@ -53,7 +54,7 @@ int main(int argc, char *argv[])
     }
 
     // enable user to specify action
-    while ((choice = enterChoice()) != 14)
+    while ((choice = enterChoice()) != 15)
     {
         switch (choice)
         {
@@ -95,6 +96,9 @@ int main(int argc, char *argv[])
             break;
         case 13:
             findOverdrawnAccounts(clients);
+            break;
+        case 14:
+            factoryReset(clients);
             break;
         default:
             puts("Incorrect choice");
@@ -477,6 +481,28 @@ void findOverdrawnAccounts(const struct clientData clients[])
     printf("---------------------------------------------\n\n");
 }
 
+// wipe all accounts (factory reset)
+void factoryReset(struct clientData clients[])
+{
+    int c;
+    char confirm;
+    
+    printf("\nWARNING: This will permanently delete ALL accounts and balances!\n");
+    printf("Are you sure you want to proceed? (y/n): ");
+    if (scanf(" %c", &confirm) != 1) {
+        while ((c = getchar()) != '\n' && c != EOF);
+        puts("Invalid input.");
+        return;
+    }
+    
+    if (confirm == 'y' || confirm == 'Y') {
+        memset(clients, 0, sizeof(struct clientData) * MAX_RECORDS);
+        puts("\nFACTORY RESET COMPLETE. All data has been wiped.");
+    } else {
+        puts("\nFactory reset aborted. Data is safe.");
+    }
+}
+
 // save the memory array back to binary file before terminating
 void saveAndExit(const struct clientData clients[], const char *filename)
 {
@@ -514,7 +540,8 @@ unsigned int enterChoice(void)
                  "11 - count active accounts\n"
                  "12 - apply interest to all positive balances\n"
                  "13 - find overdrawn accounts\n"
-                 "14 - end program\n? ");
+                 "14 - clear all accounts (Factory Reset)\n"
+                 "15 - end program\n? ");
 
     if (scanf("%u", &menuChoice) != 1) {
         // clear input buffer if invalid entry is made
