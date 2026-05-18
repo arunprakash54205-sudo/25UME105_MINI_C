@@ -3,6 +3,7 @@
 // be placed in the file, and deletes data previously in the file.
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 // clientData structure definition
 struct clientData
@@ -20,6 +21,8 @@ void updateRecord(FILE *fPtr);
 void newRecord(FILE *fPtr);
 void deleteRecord(FILE *fPtr);
 void listRecords(FILE *readPtr);
+void searchRecordByName(FILE *readPtr);
+void showTotalBalance(FILE *readPtr);
 
 // Helper function prototypes for functional decomposition
 unsigned int getValidAccountNum(const char *prompt);
@@ -51,31 +54,31 @@ int main(int argc, char *argv[])
     }
 
     // enable user to specify action
-    while ((choice = enterChoice()) != 6)
+    while ((choice = enterChoice()) != 8)
     {
         switch (choice)
         {
-        // create text file from record file
         case 1:
             textFile(cfPtr);
             break;
-        // update record
         case 2:
             updateRecord(cfPtr);
             break;
-        // create record
         case 3:
             newRecord(cfPtr);
             break;
-        // delete existing record
         case 4:
             deleteRecord(cfPtr);
             break;
-        // list all accounts
         case 5:
             listRecords(cfPtr);
             break;
-        // display if user does not select valid choice
+        case 6:
+            searchRecordByName(cfPtr);
+            break;
+        case 7:
+            showTotalBalance(cfPtr);
+            break;
         default:
             puts("Incorrect choice");
             break;
@@ -227,6 +230,60 @@ void listRecords(FILE *readPtr)
     printf("---------------------------------------------\n\n");
 } // end function listRecords
 
+// search account by last name
+void searchRecordByName(FILE *readPtr)
+{
+    char searchName[15];
+    struct clientData clients[100];
+    int found = 0;
+
+    printf("Enter last name to search: ");
+    if (scanf("%14s", searchName) != 1) {
+        int c; while ((c = getchar()) != '\n' && c != EOF);
+        puts("Invalid input.");
+        return;
+    }
+
+    rewind(readPtr);
+    size_t recordsRead = fread(clients, sizeof(struct clientData), 100, readPtr);
+    
+    printf("\n%-6s%-16s%-11s%10s\n", "Acct", "Last Name", "First Name", "Balance");
+    printf("---------------------------------------------\n");
+    for (size_t i = 0; i < recordsRead; i++)
+    {
+        if (clients[i].acctNum != 0 && strcmp(clients[i].lastName, searchName) == 0)
+        {
+            printf("%-6u%-16s%-11s%10.2f\n", clients[i].acctNum, clients[i].lastName, clients[i].firstName, clients[i].balance);
+            found = 1;
+        }
+    }
+    if (!found) {
+        printf("No accounts found with last name '%s'.\n", searchName);
+    }
+    printf("---------------------------------------------\n\n");
+}
+
+// show total balance of all accounts
+void showTotalBalance(FILE *readPtr)
+{
+    struct clientData clients[100];
+    double total = 0.0;
+
+    rewind(readPtr);
+    size_t recordsRead = fread(clients, sizeof(struct clientData), 100, readPtr);
+    
+    for (size_t i = 0; i < recordsRead; i++)
+    {
+        if (clients[i].acctNum != 0)
+        {
+            total += clients[i].balance;
+        }
+    }
+    printf("\n---------------------------------------------\n");
+    printf("Total Bank Balance: %.2f\n", total);
+    printf("---------------------------------------------\n\n");
+}
+
 // enable user to input menu choice
 unsigned int enterChoice(void)
 {
@@ -239,7 +296,9 @@ unsigned int enterChoice(void)
                  "3 - add a new account\n"
                  "4 - delete an account\n"
                  "5 - list all accounts\n"
-                 "6 - end program\n? ");
+                 "6 - search account by last name\n"
+                 "7 - show total bank balance\n"
+                 "8 - end program\n? ");
 
     if (scanf("%u", &menuChoice) != 1) {
         // clear input buffer if invalid entry is made
