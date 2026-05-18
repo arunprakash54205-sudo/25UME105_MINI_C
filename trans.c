@@ -89,6 +89,7 @@ int main(int argc, char *argv[])
 void textFile(const struct clientData clients[])
 {
     FILE *writePtr; // accounts.txt file pointer
+    int i;
 
     if ((writePtr = fopen("accounts.txt", "w")) == NULL)
     {
@@ -98,7 +99,7 @@ void textFile(const struct clientData clients[])
     {
         fprintf(writePtr, "%-6s%-16s%-11s%10s\n", "Acct", "Last Name", "First Name", "Balance");
 
-        for (int i = 0; i < MAX_RECORDS; i++)
+        for (i = 0; i < MAX_RECORDS; i++)
         {
             if (clients[i].acctNum != 0)
             {
@@ -115,10 +116,12 @@ void textFile(const struct clientData clients[])
 void updateRecord(struct clientData clients[])
 {
     unsigned int account = getValidAccountNum("Enter account to update ( 1 - 100 ): ");
+    int index;
+    double transaction;
+
     if (account == 0) return; // Invalid or aborted
 
-    // Map to array index
-    int index = account - 1;
+    index = account - 1; // Map to array index
 
     // display error if account does not exist
     if (clients[index].acctNum == 0)
@@ -129,10 +132,10 @@ void updateRecord(struct clientData clients[])
     { 
         printf("%-6u%-16s%-11s%10.2f\n\n", clients[index].acctNum, clients[index].lastName, clients[index].firstName, clients[index].balance);
 
-        double transaction;
         printf("%s", "Enter charge ( + ) or payment ( - ): ");
         if (scanf("%lf", &transaction) != 1) {
-            int c; while ((c = getchar()) != '\n' && c != EOF);
+            int c; 
+            while ((c = getchar()) != '\n' && c != EOF);
             puts("Invalid transaction amount.");
             return;
         }
@@ -148,9 +151,11 @@ void updateRecord(struct clientData clients[])
 void deleteRecord(struct clientData clients[])
 {
     unsigned int accountNum = getValidAccountNum("Enter account number to delete ( 1 - 100 ): ");
+    int index;
+
     if (accountNum == 0) return;
 
-    int index = accountNum - 1;
+    index = accountNum - 1;
 
     // display error if record does not exist
     if (clients[index].acctNum == 0)
@@ -169,9 +174,11 @@ void deleteRecord(struct clientData clients[])
 void newRecord(struct clientData clients[])
 {
     unsigned int accountNum = getValidAccountNum("Enter new account number ( 1 - 100 ): ");
+    int index;
+
     if (accountNum == 0) return;
 
-    int index = accountNum - 1;
+    index = accountNum - 1;
 
     // display error if account already exists
     if (clients[index].acctNum != 0)
@@ -182,7 +189,8 @@ void newRecord(struct clientData clients[])
     { 
         printf("%s", "Enter lastname, firstname, balance\n? ");
         if (scanf("%14s%9s%lf", clients[index].lastName, clients[index].firstName, &clients[index].balance) != 3) {
-            int c; while ((c = getchar()) != '\n' && c != EOF);
+            int c; 
+            while ((c = getchar()) != '\n' && c != EOF);
             puts("Invalid input format.");
             // Reset to 0 since input failed
             memset(&clients[index], 0, sizeof(struct clientData));
@@ -197,10 +205,11 @@ void newRecord(struct clientData clients[])
 // list all accounts
 void listRecords(const struct clientData clients[])
 {
+    int i;
     printf("\n%-6s%-16s%-11s%10s\n", "Acct", "Last Name", "First Name", "Balance");
     printf("---------------------------------------------\n");
 
-    for (int i = 0; i < MAX_RECORDS; i++)
+    for (i = 0; i < MAX_RECORDS; i++)
     {
         if (clients[i].acctNum != 0)
         {
@@ -215,17 +224,19 @@ void searchRecordByName(const struct clientData clients[])
 {
     char searchName[15];
     int found = 0;
+    int i;
 
     printf("Enter last name to search: ");
     if (scanf("%14s", searchName) != 1) {
-        int c; while ((c = getchar()) != '\n' && c != EOF);
+        int c; 
+        while ((c = getchar()) != '\n' && c != EOF);
         puts("Invalid input.");
         return;
     }
     
     printf("\n%-6s%-16s%-11s%10s\n", "Acct", "Last Name", "First Name", "Balance");
     printf("---------------------------------------------\n");
-    for (int i = 0; i < MAX_RECORDS; i++)
+    for (i = 0; i < MAX_RECORDS; i++)
     {
         if (clients[i].acctNum != 0 && strcmp(clients[i].lastName, searchName) == 0)
         {
@@ -243,8 +254,9 @@ void searchRecordByName(const struct clientData clients[])
 void showTotalBalance(const struct clientData clients[])
 {
     double total = 0.0;
+    int i;
     
-    for (int i = 0; i < MAX_RECORDS; i++)
+    for (i = 0; i < MAX_RECORDS; i++)
     {
         if (clients[i].acctNum != 0)
         {
