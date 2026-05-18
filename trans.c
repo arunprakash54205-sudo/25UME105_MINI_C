@@ -30,6 +30,8 @@ void displaySortedByBalance(const struct clientData clients[]);
 void exportToCSV(const struct clientData clients[]);
 void transferFunds(struct clientData clients[]);
 void countActiveAccounts(const struct clientData clients[]);
+void applyInterest(struct clientData clients[]);
+void findOverdrawnAccounts(const struct clientData clients[]);
 void saveAndExit(const struct clientData clients[], const char *filename);
 
 // Helper function prototypes for functional decomposition
@@ -49,11 +51,9 @@ int main(int argc, char *argv[])
         fread(clients, sizeof(struct clientData), MAX_RECORDS, cfPtr);
         fclose(cfPtr);
     }
-    // If file doesn't exist, we start with the zero-initialized array 
-    // and it will be created on exit.
 
     // enable user to specify action
-    while ((choice = enterChoice()) != 12)
+    while ((choice = enterChoice()) != 14)
     {
         switch (choice)
         {
@@ -89,6 +89,12 @@ int main(int argc, char *argv[])
             break;
         case 11:
             countActiveAccounts(clients);
+            break;
+        case 12:
+            applyInterest(clients);
+            break;
+        case 13:
+            findOverdrawnAccounts(clients);
             break;
         default:
             puts("Incorrect choice");
@@ -161,7 +167,6 @@ int compareBalance(const void *a, const void *b)
     const struct clientData *clientB = (const struct clientData *)b;
     
     // Sort descending (highest balance first)
-    // Need to push empty accounts (acctNum == 0) to the bottom
     if (clientA->acctNum == 0 && clientB->acctNum == 0) return 0;
     if (clientA->acctNum == 0) return 1;
     if (clientB->acctNum == 0) return -1;
@@ -177,7 +182,7 @@ void displaySortedByBalance(const struct clientData clients[])
     struct clientData sortedClients[MAX_RECORDS];
     int i;
     
-    // Copy active clients to temporary array so we don't mess up the index mapping
+    // Copy active clients to temporary array
     memcpy(sortedClients, clients, sizeof(struct clientData) * MAX_RECORDS);
     
     // Sort the copy using qsort
@@ -226,7 +231,7 @@ void updateRecord(struct clientData clients[])
             return;
         }
         
-        clients[index].balance += transaction; // update record balance purely in memory
+        clients[index].balance += transaction; 
 
         printf("%-6u%-16s%-11s%10.2f\n", clients[index].acctNum, clients[index].lastName, clients[index].firstName, clients[index].balance);
         puts("Account updated successfully.");
@@ -299,14 +304,12 @@ void deleteRecord(struct clientData clients[])
 
     index = accountNum - 1;
 
-    // display error if record does not exist
     if (clients[index].acctNum == 0)
     {
         printf("Account %u does not exist.\n", accountNum);
     } 
     else
     { 
-        // Zero-out the struct in memory
         memset(&clients[index], 0, sizeof(struct clientData));
         printf("Account %u deleted successfully.\n", accountNum);
     } 
@@ -324,7 +327,6 @@ void newRecord(struct clientData clients[])
 
     index = accountNum - 1;
 
-    // display error if account already exists
     if (clients[index].acctNum != 0)
     {
         printf("Account #%u already contains information.\n", clients[index].acctNum);
@@ -335,7 +337,6 @@ void newRecord(struct clientData clients[])
         if (scanf("%14s%9s%lf", clients[index].lastName, clients[index].firstName, &clients[index].balance) != 3) {
             while ((c = getchar()) != '\n' && c != EOF);
             puts("Invalid input format.");
-            // Reset to 0 since input failed
             memset(&clients[index], 0, sizeof(struct clientData));
             return;
         }
@@ -425,6 +426,57 @@ void countActiveAccounts(const struct clientData clients[])
     printf("---------------------------------------------\n\n");
 }
 
+// apply interest to all accounts with positive balances
+void applyInterest(struct clientData clients[])
+{
+    double rate;
+    int c;
+    int i;
+    int count = 0;
+
+    printf("Enter interest rate percentage (e.g., 5 for 5%%): ");
+    if (scanf("%lf", &rate) != 1) {
+        while ((c = getchar()) != '\n' && c != EOF);
+        puts("Invalid rate.");
+        return;
+    }
+
+    for (i = 0; i < MAX_RECORDS; i++)
+    {
+        if (clients[i].acctNum != 0 && clients[i].balance > 0)
+        {
+            clients[i].balance += clients[i].balance * (rate / 100.0);
+            count++;
+        }
+    }
+    printf("Successfully applied %.2f%% interest to %d accounts.\n", rate, count);
+}
+
+// find all overdrawn (negative balance) accounts
+void findOverdrawnAccounts(const struct clientData clients[])
+{
+    int i;
+    int found = 0;
+
+    printf("\n--- Overdrawn Accounts (Negative Balance) ---\n");
+    printf("%-6s%-16s%-11s%10s\n", "Acct", "Last Name", "First Name", "Balance");
+    printf("---------------------------------------------\n");
+
+    for (i = 0; i < MAX_RECORDS; i++)
+    {
+        if (clients[i].acctNum != 0 && clients[i].balance < 0)
+        {
+            printf("%-6u%-16s%-11s%10.2f\n", clients[i].acctNum, clients[i].lastName, clients[i].firstName, clients[i].balance);
+            found++;
+        }
+    }
+
+    if (found == 0) {
+        puts("No overdrawn accounts found. Great!");
+    }
+    printf("---------------------------------------------\n\n");
+}
+
 // save the memory array back to binary file before terminating
 void saveAndExit(const struct clientData clients[], const char *filename)
 {
@@ -460,7 +512,9 @@ unsigned int enterChoice(void)
                  "9 - export accounts to CSV\n"
                  "10 - transfer funds between accounts\n"
                  "11 - count active accounts\n"
-                 "12 - end program\n? ");
+                 "12 - apply interest to all positive balances\n"
+                 "13 - find overdrawn accounts\n"
+                 "14 - end program\n? ");
 
     if (scanf("%u", &menuChoice) != 1) {
         // clear input buffer if invalid entry is made
