@@ -33,6 +33,8 @@ void countActiveAccounts(const struct clientData clients[]);
 void applyInterest(struct clientData clients[]);
 void findOverdrawnAccounts(const struct clientData clients[]);
 void factoryReset(struct clientData clients[]);
+void backupData(const struct clientData clients[]);
+void restoreData(struct clientData clients[]);
 void saveAndExit(const struct clientData clients[], const char *filename);
 
 // Helper function prototypes for functional decomposition
@@ -54,7 +56,7 @@ int main(int argc, char *argv[])
     }
 
     // enable user to specify action
-    while ((choice = enterChoice()) != 15)
+    while ((choice = enterChoice()) != 17)
     {
         switch (choice)
         {
@@ -99,6 +101,12 @@ int main(int argc, char *argv[])
             break;
         case 14:
             factoryReset(clients);
+            break;
+        case 15:
+            backupData(clients);
+            break;
+        case 16:
+            restoreData(clients);
             break;
         default:
             puts("Incorrect choice");
@@ -503,6 +511,53 @@ void factoryReset(struct clientData clients[])
     }
 }
 
+// create a full backup of all accounts
+void backupData(const struct clientData clients[])
+{
+    FILE *writePtr;
+    if ((writePtr = fopen("clients_backup.dat", "wb")) == NULL)
+    {
+        puts("Error: Could not create backup file.");
+    }
+    else
+    {
+        fwrite(clients, sizeof(struct clientData), MAX_RECORDS, writePtr);
+        fclose(writePtr);
+        puts("\nSuccessfully backed up all accounts to clients_backup.dat!\n");
+    }
+}
+
+// restore all accounts from the backup
+void restoreData(struct clientData clients[])
+{
+    FILE *readPtr;
+    int c;
+    char confirm;
+    
+    printf("\nWARNING: This will overwrite current memory with the backup data.\n");
+    printf("Are you sure you want to proceed? (y/n): ");
+    if (scanf(" %c", &confirm) != 1) {
+        while ((c = getchar()) != '\n' && c != EOF);
+        puts("Invalid input.");
+        return;
+    }
+    
+    if (confirm == 'y' || confirm == 'Y') {
+        if ((readPtr = fopen("clients_backup.dat", "rb")) != NULL)
+        {
+            fread(clients, sizeof(struct clientData), MAX_RECORDS, readPtr);
+            fclose(readPtr);
+            puts("\nSuccessfully restored data from clients_backup.dat!\n");
+        }
+        else
+        {
+            puts("\nError: No backup file found (clients_backup.dat).\n");
+        }
+    } else {
+        puts("\nRestore aborted. Current data is intact.\n");
+    }
+}
+
 // save the memory array back to binary file before terminating
 void saveAndExit(const struct clientData clients[], const char *filename)
 {
@@ -541,7 +596,9 @@ unsigned int enterChoice(void)
                  "12 - apply interest to all positive balances\n"
                  "13 - find overdrawn accounts\n"
                  "14 - clear all accounts (Factory Reset)\n"
-                 "15 - end program\n? ");
+                 "15 - backup data to secure file\n"
+                 "16 - restore data from backup\n"
+                 "17 - end program\n? ");
 
     if (scanf("%u", &menuChoice) != 1) {
         // clear input buffer if invalid entry is made
