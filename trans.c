@@ -28,6 +28,8 @@ void searchRecordByName(const struct clientData clients[]);
 void showTotalBalance(const struct clientData clients[]);
 void displaySortedByBalance(const struct clientData clients[]);
 void exportToCSV(const struct clientData clients[]);
+void transferFunds(struct clientData clients[]);
+void countActiveAccounts(const struct clientData clients[]);
 void saveAndExit(const struct clientData clients[], const char *filename);
 
 // Helper function prototypes for functional decomposition
@@ -51,7 +53,7 @@ int main(int argc, char *argv[])
     // and it will be created on exit.
 
     // enable user to specify action
-    while ((choice = enterChoice()) != 10)
+    while ((choice = enterChoice()) != 12)
     {
         switch (choice)
         {
@@ -81,6 +83,12 @@ int main(int argc, char *argv[])
             break;
         case 9:
             exportToCSV(clients);
+            break;
+        case 10:
+            transferFunds(clients);
+            break;
+        case 11:
+            countActiveAccounts(clients);
             break;
         default:
             puts("Incorrect choice");
@@ -225,6 +233,61 @@ void updateRecord(struct clientData clients[])
     } 
 } // end function updateRecord
 
+// transfer funds between two accounts
+void transferFunds(struct clientData clients[])
+{
+    unsigned int fromAccount, toAccount;
+    int fromIndex, toIndex;
+    double amount;
+    int c;
+
+    fromAccount = getValidAccountNum("Enter account to transfer FROM ( 1 - 100 ): ");
+    if (fromAccount == 0) return;
+    
+    toAccount = getValidAccountNum("Enter account to transfer TO ( 1 - 100 ): ");
+    if (toAccount == 0) return;
+
+    if (fromAccount == toAccount) {
+        puts("Cannot transfer funds to the same account.");
+        return;
+    }
+
+    fromIndex = fromAccount - 1;
+    toIndex = toAccount - 1;
+
+    if (clients[fromIndex].acctNum == 0) {
+        printf("Sender account #%u does not exist.\n", fromAccount);
+        return;
+    }
+    if (clients[toIndex].acctNum == 0) {
+        printf("Receiver account #%u does not exist.\n", toAccount);
+        return;
+    }
+
+    printf("Enter transfer amount: ");
+    if (scanf("%lf", &amount) != 1) {
+        while ((c = getchar()) != '\n' && c != EOF);
+        puts("Invalid amount.");
+        return;
+    }
+
+    if (amount < 0) {
+        puts("Cannot transfer a negative amount.");
+        return;
+    }
+    if (clients[fromIndex].balance < amount) {
+        puts("Insufficient funds in sender account.");
+        return;
+    }
+
+    clients[fromIndex].balance -= amount;
+    clients[toIndex].balance += amount;
+
+    puts("Transfer successful!");
+    printf("New Balance for Sender Account #%u: %.2f\n", fromAccount, clients[fromIndex].balance);
+    printf("New Balance for Receiver Account #%u: %.2f\n", toAccount, clients[toIndex].balance);
+}
+
 // delete an existing record
 void deleteRecord(struct clientData clients[])
 {
@@ -348,6 +411,20 @@ void showTotalBalance(const struct clientData clients[])
     printf("---------------------------------------------\n\n");
 }
 
+// show total active accounts
+void countActiveAccounts(const struct clientData clients[])
+{
+    int activeCount = 0;
+    int i;
+    for (i = 0; i < MAX_RECORDS; i++)
+    {
+        if (clients[i].acctNum != 0) activeCount++;
+    }
+    printf("\n---------------------------------------------\n");
+    printf("Total Active Accounts: %d / %d\n", activeCount, MAX_RECORDS);
+    printf("---------------------------------------------\n\n");
+}
+
 // save the memory array back to binary file before terminating
 void saveAndExit(const struct clientData clients[], const char *filename)
 {
@@ -381,7 +458,9 @@ unsigned int enterChoice(void)
                  "7 - show total bank balance\n"
                  "8 - display accounts sorted by balance\n"
                  "9 - export accounts to CSV\n"
-                 "10 - end program\n? ");
+                 "10 - transfer funds between accounts\n"
+                 "11 - count active accounts\n"
+                 "12 - end program\n? ");
 
     if (scanf("%u", &menuChoice) != 1) {
         // clear input buffer if invalid entry is made
