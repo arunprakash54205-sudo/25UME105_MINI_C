@@ -115,10 +115,12 @@ void textFile(const struct clientData clients[])
 // update balance in record
 void updateRecord(struct clientData clients[])
 {
-    unsigned int account = getValidAccountNum("Enter account to update ( 1 - 100 ): ");
+    unsigned int account;
     int index;
     double transaction;
+    int c;
 
+    account = getValidAccountNum("Enter account to update ( 1 - 100 ): ");
     if (account == 0) return; // Invalid or aborted
 
     index = account - 1; // Map to array index
@@ -134,7 +136,6 @@ void updateRecord(struct clientData clients[])
 
         printf("%s", "Enter charge ( + ) or payment ( - ): ");
         if (scanf("%lf", &transaction) != 1) {
-            int c; 
             while ((c = getchar()) != '\n' && c != EOF);
             puts("Invalid transaction amount.");
             return;
@@ -173,9 +174,11 @@ void deleteRecord(struct clientData clients[])
 // create and insert record
 void newRecord(struct clientData clients[])
 {
-    unsigned int accountNum = getValidAccountNum("Enter new account number ( 1 - 100 ): ");
+    unsigned int accountNum;
     int index;
+    int c;
 
+    accountNum = getValidAccountNum("Enter new account number ( 1 - 100 ): ");
     if (accountNum == 0) return;
 
     index = accountNum - 1;
@@ -189,7 +192,6 @@ void newRecord(struct clientData clients[])
     { 
         printf("%s", "Enter lastname, firstname, balance\n? ");
         if (scanf("%14s%9s%lf", clients[index].lastName, clients[index].firstName, &clients[index].balance) != 3) {
-            int c; 
             while ((c = getchar()) != '\n' && c != EOF);
             puts("Invalid input format.");
             // Reset to 0 since input failed
@@ -225,10 +227,10 @@ void searchRecordByName(const struct clientData clients[])
     char searchName[15];
     int found = 0;
     int i;
+    int c;
 
     printf("Enter last name to search: ");
     if (scanf("%14s", searchName) != 1) {
-        int c; 
         while ((c = getchar()) != '\n' && c != EOF);
         puts("Invalid input.");
         return;
@@ -288,6 +290,7 @@ void saveAndExit(const struct clientData clients[], const char *filename)
 unsigned int enterChoice(void)
 {
     unsigned int menuChoice; // variable to store user's choice
+    int c;
     // display available options
     printf("%s", "\nEnter your choice\n"
                  "1 - store a formatted text file of accounts called\n"
@@ -302,7 +305,6 @@ unsigned int enterChoice(void)
 
     if (scanf("%u", &menuChoice) != 1) {
         // clear input buffer if invalid entry is made
-        int c;
         while ((c = getchar()) != '\n' && c != EOF);
         menuChoice = 0; // set to invalid choice
     }
@@ -315,10 +317,11 @@ unsigned int enterChoice(void)
 unsigned int getValidAccountNum(const char *prompt)
 {
     unsigned int accountNum;
+    int c;
+
     printf("%s", prompt);
     if (scanf("%u", &accountNum) != 1)
     {
-        int c;
         while ((c = getchar()) != '\n' && c != EOF);
         return 0; 
     }
